@@ -5,9 +5,10 @@
 \usepackage{hyperref}
 
 \usepackage{todonotes}
-\newcommand{\todoI}[1]{\todo[author=panos,color=green]{#1}}
-\newcommand{\todoP}[1]{\todo[author=aris,color=gray]{#1}}
-\newcommand{\todoH}[1]{\todo[author=jon,color=red]{#1}}
+\newcommand{\todoI}[1]{\todo[author=isak,color=green]{#1}}
+\newcommand{\todoP}[1]{\todo[author=panos,color=gray]{#1}}
+\newcommand{\todoJ}[1]{\todo[author=jon,color=red]{#1}}
+\newcommand{\todoA}[1]{\todo[author=aris,color=green]{#1}}
 
 \usepackage[utf8]{inputenc}
 
@@ -30,13 +31,24 @@
 
 \journalname{Data Mining and Knowledge Discovery}
 
-\title{Interpretable Time Series Classification}
+\title{Actionable Shapelet Tweaking for Time Series Classification}
 \author{...}
 \date{March 2018}
 
 \begin{document}
 
 \maketitle
+
+TODOs
+\begin{enumerate}
+\item motivation and examples from application areas where actionable shapelets are useful. One example is ECG data: find segments that explain the classifier's decision and suggest how they should be changed in order to convert the ECG to a healthy one.Perhaps a sports dataset.
+
+\item Simple version: decision tree. Look at TP paths and find the one with the smallest cost; convert each feature decision.
+
+\item ensemble version: Greedy solution. Look at each TN tree. Find the smallest cost path. Apply the changes to the time series example. Try the next tree; until the ensemble changes the decision. 
+
+\item  ensemble version: Optimal solution. If shapelets are matching it can be hard.NP hard (possibly). 
+\end{enumerate}
 
 \section{Motivation}
 Recently, the generalized random shapelet forest (gRSF) \citep{KarlssonPB16} has been proposed for univariate and multi-variate time series classification. The main idea is to build a set of decision trees, where each feature corresponds to a \emph{shapelet}. The decision condition on an internal node is the presence or absence of a shapelet in a test time series example.
@@ -95,6 +107,7 @@ Hence, the time series feature tweaking problem for the 2-D case, is simply the 
 \caption{Example of time series tweaking under the ED.}\label{fig:exampleED}
 \end{figure}
 
+
 \section{Background}
 \begin{definition} \textbf{($d$-dimensional time series)} %
 A \emph{$d$-dimensional time series} $\mathcal{T} = \{\vec{T_{1}}, \ldots, \vec{T_{d}}\}$ is a sequence of $d$ variables, such that $\vec{T}_k\in \mathbb{R}^m$, $\forall k\in\{1,\dots,d\}$, where $\vec{T_k}=\{T_{k,1},\ldots,T_{k,m}\}$, with $T_{k,j}\in \mathbb{R}$, $\forall j\in\{1,\dots,m\}$. For $d=1$, $\mathcal{T}$ defines a \emph{univariate} time series, denoted simply as $\mathcal{T}=\{T_1,\ldots,T_m\}$ consisting of a sequence of $m$ ordered elements $T_j \in \mathbb{R}$. For $d>1$, $\mathcal{T}$ defines a \emph{multivariate} time series.
@@ -142,10 +155,9 @@ f(\mathcal{T}^{i}) = \hat{y}_i\in \mathcal{C} \ ,
 \end{definition}
 
 \subsection{Problem formulation}
+Let $\mathcal{R} = \{F_1, \dots, F_k\}$ be a shapelet tree ensemble of $k$ members, where each $F_i$ is a shapelet tree. Consider a time series test example $\mathcal{T}$, and for simplicity let us focus on the univariate case. 
 
-Let $\mathcal{R} = \{F_1, \dots, F_k\}$ be a random shapelet forest, where each $F_i$ is a random shapelet tree. Consider a time series test example $\mathcal{T}$, and for simplicity let us focus on the univariate case. 
-
-Suppose that the predicted class by $\mathcal{R}$ for $\mathcal{T}$ is $f(\mathcal{T}) = -1$, which also equals the actual class of $\mathcal{T}$. The objective is to identify those classifiers in $\mathcal{R}$ for which $h(\mathcal{T}) = -1$, i.e., those who disagree with the ensemble prediction. 
+Suppose that the predicted class by $\mathcal{R}$ for $\mathcal{T}$ is $f(\mathcal{T}) = y$, which also equals the actual class of $\mathcal{T}$ and we want to change the time series to flip the prediction to another label $y'$. The objective is to identify \emph{a transformation} $\tau{\mathcal{T}} = \mathcal{T}'$ for which the prediction of $f(\mathcal{T}') = y'$.
 
 \section{Proposed Method}
 
@@ -168,8 +180,44 @@ f(\mathcal{T}) =
 \end{cases}
 \end{equation}
 
-\subsection{Generalization and overall algorithm}
-The simplest problem in our setting is a decision stump.
+\subsection{Greedy algorithm}
+
+Given an ensemble $\mathcal{R}$ of $k$ shapelet trees\footnote{With unscaled (i.e., not z-normalized) shapelets}, we convert each path from the root node to a leaf node for each tree to a bag of rules per label. Lets denote a rule (decision list) as $DL^j_{c=y}$ (i.e., the $j$:th rule predicting $y$). Each rule consist of a sequence of condition $C_1,\ldots,C_P$ which are represented by the triple $C_p=(\tau, \mathcal{S}, \theta')$. In the condition triplet, $\tau$ is either $\leq$ or $>$, $\mathcal{S}$ is the shapelet used in the comparison and $\theta'$ is the distance threshold. We say that a time series is covered by a condition if $\tau(Sdist(\mathcal{S}, \mathcal{T}), \theta)$ is true and we say that a time series if covered by a rule if all conditions of the rule are true. In the greedy algorithm, we collect all rules resulting in a particular prediction and denote this bag as $DL_{c=y}=[DL^{j}_{c=y},\ldots,DL^{J}_{c=y}]$. For instance, $DL_{c=1}$ contains all rules that predicts a time series as $y=1$ and $DL_{c=5}$ all rules that predicts a time series as $y=5$.
+
+Given a time series $\mathcal{T}$ predicted as some label $y$, and a desired label $y'$ where $y \neq y'$ and a bag of rules predicting $y'$, i.e., $DL_{c=y'}$, the greedy algorithm applies a sequence of transformations $\mathcal{T}' = \Delta(C^p, \mathcal{T})$ for each rule $DL^j_{c=y'}$, starting with applying the first condition $\mathcal{T}'_1 = \Delta(C^1, \mathcal{T})$ to the original time series, and continue to apply all subsequent conditions to the resulting time series, i.e., $\mathcal{T}'_{p+1} = \Delta(C^p, \mathcal{T}'_{p})$.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{example.png}
+    \caption{Example of moving the point $T$ to the closest point on the circle representing the distance threshold $\theta$, where the distance between $dist(\mathcal{S}, \mathcal{T}) = \theta$}
+    \label{fig:move:example}
+\end{figure}
+
+A transformation is needed when $\tau(Sdist(\mathcal{S}, \mathcal{T}), \theta)$ is false, i.e., when $\tau$ is $\leq$ and $Sdist(\mathcal{S}, \mathcal{T}) > \theta$ or when $\tau$ is $>$ and $Sdist(\mathcal{S}, \mathcal{T}) \leq \theta$. In the first case i.e.,  when the closest match is larger than the threshold but we want it to be smaller, the transformation is simple: we find the shapelet (starting at $s$ and ending at $e$) with the closest match and apply Eq.\ref{eq:move} (see Fig.~\ref{fig:move:example}) with $\epsilon$ set to a small \emph{negative} constant to move the shapelet slightly closer than $\theta$ and replaces the shapelet in $\mathcal{T}'_{p+1}=\mathcal{T}'^{(s:e)}_{p} = \mathcal{P}$ (abusing notation, this means that the shapelet starting at $s$ and ending at $e$ in $\mathcal{T}$ is replaced by $\mathcal{P}$ and assigned to $\mathcal{T}'$). In the second case, i.e., when the closest match is smaller than the threshold but we want it to be larger, the transformation is slightly more convoluted since there might exist many position where the distance is smaller than $\theta$. In the greedy approach, we simply transform each matching position in order (ignoring that transformations might overlap), according to Eq.~\ref{eq:move} with $\epsilon$ set to a small \emph{positive} constant to move the shapelet slight farther away than $\theta$ and replace the corresponding shapelet with $\mathcal{P}$.
+
+\begin{equation}
+ \mathcal{P} = \mathcal{S} - \frac{\mathcal{S} - \mathcal{T}^{(s:e)}}{\lVert \mathcal{S} - \mathcal{T}^{(s:e)} \rVert^2}(\theta+\epsilon)
+ \label{eq:move}
+\end{equation}
+
+Then, for each rule of the target label $y'$, we transform the time series $\mathcal{T}$ to $\mathcal{T}'_1,\ldots,\mathcal{T}'_J$ and select the time series with the minimum Euclidean distance to the original time series, i.e., $\lVert \mathcal{T} - \mathcal{T}'_j\rVert^2$, and where the transformation is successfully according to the ensemble, i.e., $f(\mathcal{T}'_j) = y'$.  
+
+
+An example can be seen in Fig.~\ref{fig:greedy:example:1} where a time series representing different insects flying through a audio recording device. The original time series (blue) denotes an insect labeled as $1$ and the red time series denote the same time series after being transformed to an insect labeled as $5$. The gray dashed line represent the closes neighbour to the transformed time series among insects labeled $5$. A similar example is show in Fig.~\ref{fig:greedy:example:2} for the four transformations with lowest transformation cost, i.e., the transformations most similar to the original time series.  
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{figure/greedy/example1.pdf}
+    \caption{Example of converting the time series $\mathcal{T}$ (blue) with $y=1$ to a transformed time series $\mathcal{T}'$ (red) with label changed to $y'=5$. The gray dotted line denotes the nearest neighbour of $\mathcal{T}$ among the time series labeled as $y'=5$}
+    \label{fig:greedy:example:1}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figure/greedy/example2.pdf}
+    \caption{Example of converting the time series $\mathcal{T}$ (blue) with label $y=1$ to a transformed time series $\mathcal{T}'$ (red) for which the label is predicted as $y'=5$, for the four least costly transformations, as measured by the Euclidean distance, i.e., $\lVert \mathcal{T} - \mathcal{T}'\rVert^2$.}
+    \label{fig:greedy:example:2}
+\end{figure}
 
 
 
