@@ -1,6 +1,5 @@
-\documentclass[conference]{IEEEtran}
-\IEEEoverridecommandlockouts
-% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\RequirePackage{fix-cm}
+\documentclass[smallextended,natbib]{svjour3}
 
 \usepackage{graphicx}
 \usepackage{hyperref}
@@ -29,39 +28,16 @@
 
 \usepackage{tikz}
 \usetikzlibrary{trees}
-\usepackage{cite}
-\usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
-\usepackage{graphicx}
-\usepackage{textcomp}
-\usepackage{xcolor}
-\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\journalname{Data Mining and Knowledge Discovery}
+
+\title{Actionable Shapelet Tweaking for Time Series Classification}
+\author{...}
+\date{March 2018}
+
 \begin{document}
 
-\title{Explainable shapelet tweaking for time series classification\\
-%{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and
-%should not be used}
-%\thanks{Identify applicable funding agency here. If none, delete this.}
-}
-
-\author{\IEEEauthorblockN{***}
-%\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-%\textit{name of organization (of Aff.)}\\
-%City, Country \\
-%email address}
-}
-
-
 \maketitle
-
-\begin{abstract}
-...
-\end{abstract}
-
-\begin{IEEEkeywords}
-...
-\end{IEEEkeywords}
 
 TODOs
 \begin{enumerate}
@@ -78,7 +54,8 @@ TODOs
 \item [DONE] ensemble version: Greedy solution. Look at each TN tree. Find the smallest cost path. Apply the changes to the time series example. Try the next tree; until the ensemble changes the decision. 
 
 \end{enumerate}
-\section{Introduction}
+
+\section{Motivation}
 Recently, the generalized random shapelet forest (gRSF) \citep{KarlssonPB16} has been proposed for univariate and multi-variate time series classification. The main idea is to build a set of decision trees, where each feature corresponds to a \emph{shapelet}. The decision condition on an internal node is the presence or absence of a shapelet in a test time series example.
 
 Despite its competitive performance in terms of classification accuracy on a large collection time series datasets, gRSF is an opaque classification model. It is hence not feasible to come up with any reasoning behind the predictions that could possible be helpful to domain experts and practitioners.
@@ -135,44 +112,42 @@ Hence, the time series feature tweaking problem for the 2-D case, is simply the 
 \caption{Example of time series tweaking under the ED.}\label{fig:exampleED}
 \end{figure}
 
-\section{Related Work}
 
-\section{Background and problem formulation}
-\begin{def} 
-\textbf{($d$-dimensional time series)} %
+\section{Background}
+\begin{definition} \textbf{($d$-dimensional time series)} %
 A \emph{$d$-dimensional time series} $\mathcal{T} = \{\vec{T_{1}}, \ldots, \vec{T_{d}}\}$ is a sequence of $d$ variables, such that $\vec{T}_k\in \mathbb{R}^m$, $\forall k\in\{1,\dots,d\}$, where $\vec{T_k}=\{T_{k,1},\ldots,T_{k,m}\}$, with $T_{k,j}\in \mathbb{R}$, $\forall j\in\{1,\dots,m\}$. For $d=1$, $\mathcal{T}$ defines a \emph{univariate} time series, denoted simply as $\mathcal{T}=\{T_1,\ldots,T_m\}$ consisting of a sequence of $m$ ordered elements $T_j \in \mathbb{R}$. For $d>1$, $\mathcal{T}$ defines a \emph{multivariate} time series.
-\end{def}
+\end{definition}
 
 A local segment of a time series is called a \emph{time series subsequence}. A more formal definition is given next.
 
-\begin{def} \textbf{(time series subsequence)} 
+\begin{definition} \textbf{(time series subsequence)} 
  A \emph{time series sub\-sequence} of the $k^{th}$ dimension of a time series $\mathcal{T}$ is a sequence of $l$ contiguous elements of $\vec{T}_k$, denoted as $\vec{T}_{k}^{s:s+l-1} = \{T_{k,s}, \ldots, T_{k,s+l-1}\}$, where $s$ is the starting position and $l$ is its length. Time series sub\-sequence and shapelet is used interchangeably.
-\end{def}
+\end{definition}
 
 Time series classification predominantly relies on the chosen distance (similarity) measure to compare and discriminate between instance pairs. The main task is to employ a distance function $dist(\cdot)$ that compares two time series of equal length, and then given a time series subsequence (corresponding to a candidate discriminant shapelet) identify the closest subsequence match in the target time series. Depending on the application domain and the nature of the time series, various distance measures can be used.
 
-\begin{def} \textbf{(time series sub\-sequence distance)} 
+\begin{definition} \textbf{(time series sub\-sequence distance)} 
 Given a $1$-dimensional time series $\mathcal{S}$ and a $d$-dimensional time series $\mathcal{T}$ of lengths $l$ and $m$, respectively, such that $l \leq m$, the \emph{time series sub\-sequence distance} between $\mathcal{S}$ and the $k^{th}$ dimension of $\mathcal{T}$, is the minimum distance between $\mathcal{S}$ and any sub\-sequence of $\vec{T}_k$ of length $l$, i.e.:
 \begin{equation}
   Sdist(\mathcal{S}, \vec{T}_k) = \min_{s=1}^{m-l+1} \{ 
   dist (\mathcal{S}, \vec{T}_k^{s:s+l-1}) \} \ .
 \end{equation}
 Note that since a $\mathcal{S}$ is $1$-dimensional time series of length equal to the length of each sub\-sequence $\vec{T}_k'^{s:s+l-1}$, dist can be applied directly.
-\end{def}
+\end{definition}
 
 One possible distance function for $dist(\cdot)$ is the Euclidean distance.
-\begin{def} \textbf{(time series Euclidean distance)} %
+\begin{definition} \textbf{(time series Euclidean distance)} %
 Given two time series $\mathcal{T}$ and $\mathcal{T'}$ of equal length $l$, the distance between their corresponding $k^{th}$ dimensions is the length-normalized Euclidean distance between $\vec{T}_k$ and $\vec{T}_k'$, i.e.:
 \begin{equation}
  dist(\vec{T}_k,\vec{T}_k') = ED (\vec{T}_k,\vec{T}_k') =  \sqrt{\frac{1}{l} \sum_{i=1}^{l}(T_{k,i}-T_{k,i}')^2} \ .
 \end{equation}
  
-\end{def}
+\end{definition}
 Finally, we define the distance between a time series sub\-sequence and a time series.
 
 A collection of $n$ time series $\mathcal{D} = \{\mathcal{T}^{1},\ldots,\mathcal{T}^{n}\}$ defines a \emph{time series dataset}. 
 
-\begin{def} \textbf{(time series classification function)} %
+\begin{definition} \textbf{(time series classification function)} %
   Given a dataset $\mathcal{D}$ of $n$ time series and a finite set of
   labels $\mathcal{C}$, a classification function is a mapping
   $f : \mathcal{D} \rightarrow \mathcal{C}$, such that for each
@@ -182,14 +157,14 @@ A collection of $n$ time series $\mathcal{D} = \{\mathcal{T}^{1},\ldots,\mathcal
 f(\mathcal{T}^{i}) = \hat{y}_i\in \mathcal{C} \ ,
   \forall i\in \{1,\dots,n\} \ .
 \]
-\end{def}
+\end{definition}
 
 \subsection{Problem formulation}
 Let $\mathcal{R} = \{F_1, \dots, F_k\}$ be a shapelet tree ensemble of $k$ members, where each $F_i$ is a shapelet tree. Consider a time series test example $\mathcal{T}$, and for simplicity let us focus on the univariate case. 
 
 Suppose that the predicted class by $\mathcal{R}$ for $\mathcal{T}$ is $f(\mathcal{T}) = y$, which also equals the actual class of $\mathcal{T}$ and we want to change the time series to flip the prediction to another label $y'$. The objective is to identify \emph{a transformation} $\tau{\mathcal{T}} = \mathcal{T}'$ for which the prediction of $f(\mathcal{T}') = y'$.
 
-\section{Methods}
+\section{Proposed Method}
 
 \subsection{Decision stump}
 The simplest problem in our setting is a decision stump. Given a decision node, a shapelet $\mathcal{S}$, a time series $\mathcal{T}$, and a matching threshold $\theta$, we can have two possible settings:
@@ -218,7 +193,7 @@ Given a time series $\mathcal{T}$ predicted as some label $y$, and a desired lab
 
 \begin{figure}
     \centering
-    \includegraphics[width=\columnwidth]{example.png}
+    \includegraphics[width=0.7\textwidth]{example.png}
     \caption{Example of moving the point $T$ to the closest point on the circle representing the distance threshold $\theta$, where the distance between $dist(\mathcal{S}, \mathcal{T}) = \theta$}
     \label{fig:move:example}
 \end{figure}
@@ -237,29 +212,19 @@ An example can be seen in Fig.~\ref{fig:greedy:example:1} where a time series re
 
 \begin{figure}
     \centering
-    \includegraphics[width=\columnwidth]{figure/greedy/example1.pdf}
+    \includegraphics[width=0.7\textwidth]{figure/greedy/example1.pdf}
     \caption{Example of converting the time series $\mathcal{T}$ (blue) with $y=1$ to a transformed time series $\mathcal{T}'$ (red) with label changed to $y'=5$. The gray dotted line denotes the nearest neighbour of $\mathcal{T}$ among the time series labeled as $y'=5$}
     \label{fig:greedy:example:1}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=\columnwidth]{figure/greedy/example2.pdf}
+    \includegraphics[width=0.8\textwidth]{figure/greedy/example2.pdf}
     \caption{Example of converting the time series $\mathcal{T}$ (blue) with label $y=1$ to a transformed time series $\mathcal{T}'$ (red) for which the label is predicted as $y'=5$, for the four least costly transformations, as measured by the Euclidean distance, i.e., $\lVert \mathcal{T} - \mathcal{T}'\rVert^2$.}
     \label{fig:greedy:example:2}
 \end{figure}
 
-\section{Theoretical properties}
 
-\section{Experimental evaluation}
-
-
-\section{Conclusions}
-
-
-\section*{Acknowledgments}
-
-\section*{References}
 
 \bibliographystyle{spbasic} 
 \bibliography{references}
